@@ -36,18 +36,9 @@ export interface Producto {
   usuarioUpdatedId: number;
   linea: SelectLinea;
   marca: SelectMarca;
-  /* itemsAlternativo?: ItemProdAlternativo[] | null;
-  poseeAlternativos: boolean;
-  esAlternativo: boolean; */
+  presentacion?: SelectPresentacion;
+  denominacionPersonalizada?: boolean;
   sistema: number;
-  /* sublinea: SelectSublinea;
-  precioOcasionalConIva: number;
-  precioMayoristaConIva: number;
-  precioClienteConIva: number;
-  precioOfertaConIva: number;
-  presentacion: SelectPresentacion;
-  itemsProveedor?: ItemProveedor[] | null;
- */
   stockMinimo: number;
   cantidadPorPack: number;
   utilizaStockMinimo: boolean;
