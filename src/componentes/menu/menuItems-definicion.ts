@@ -1,4 +1,5 @@
 import {
+  Package,
   Layers,
   ShoppingBag,
   Tag,
@@ -66,6 +67,7 @@ export const menuItems: MenuItem[] = [
           { icon: Layers, label: "SuperLíneas", path: "super-linea" },
           { icon: Layers, label: "Líneas", path: "linea" },
           { icon: Tag, label: "Marca", path: "marca" },
+          { icon: Package, label: "Presentación", path: "presentacion" },
         ],
         roles: [Rol.ADMINISTRADOR,Rol.ROOT,Rol.ROOT],
       },

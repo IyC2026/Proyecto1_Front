@@ -13,6 +13,7 @@ import ConsultarProveedores from "./componentes/gestion-organizacion/proveedor/u
 import ConsultarLocalidad from "./componentes/gestion-organizacion/localidad/utils/consultar-localidad";
 import ConsultarLinea from "./componentes/gestion-producto/linea/utils/consultar-linea";
 import ConsultarSuperLinea from "./componentes/gestion-producto/super-linea/utils/consultar-super-linea";
+import ConsultarPresentaciones from "./componentes/gestion-producto/presentacion/utils/consultar-presentacion";
 
 import PrivateRoute from "./utils/PrivateRoute";
 import { Rol } from "./interfaces/generales/interfaces-generales";
@@ -44,6 +45,7 @@ function App() {
      
               <Route path="super-linea" element={<ConsultarSuperLinea />} />
               <Route path="linea" element={<ConsultarLinea />} />
+              <Route path="presentacion" element={<ConsultarPresentaciones />} />
               <Route path="usuario" element={<GestionUsuario />} />
               <Route path="producto" element={<ConsultarProducto />} />
               <Route path="cliente" element={<ConsultarCliente />} />
