@@ -63,8 +63,9 @@ export const menuItems: MenuItem[] = [
         label: "Configuración",
         path: "",
         subMenu: [
-          { icon: Tag, label: "Marca", path: "marca" },
+          { icon: Layers, label: "SuperLíneas", path: "super-linea" },
           { icon: Layers, label: "Líneas", path: "linea" },
+          { icon: Tag, label: "Marca", path: "marca" },
         ],
         roles: [Rol.ADMINISTRADOR,Rol.ROOT,Rol.ROOT],
       },
