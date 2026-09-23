@@ -297,10 +297,16 @@ export default function ConsultarProductos() {
   };
 
   const handleMostrarCambioPrecios = async (id: number) => {
-    if (id) {
-      const producto = await ProductoService.obtenerId(id);
-      setProductoInfo(producto);
-      setMostrarCambioPrecios(true);
+    try {
+      if (id) {
+        console.log("Obteniendo producto con ID:", id);
+        const producto = await ProductoService.obtenerId(id);
+        console.log("Producto obtenido:", producto);
+        setProductoInfo(producto);
+        setMostrarCambioPrecios(true);
+      }
+    } catch (error) {
+      console.error("Error al obtener el producto para cambio de precios:", error);
     }
   };
 

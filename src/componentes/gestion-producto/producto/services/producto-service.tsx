@@ -125,6 +125,32 @@ const ProductoService = {
     );
     return data;
   },
+
+  actualizarPrecio: async (id: number, payload: { precioNuevo: number; motivo: string; usuarioId: number }) => {
+    try {
+      const token = localStorage.getItem("Token");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+      const result = await axios.put(`${apiUrl}/producto/${id}/precio`, payload, { headers });
+      return result.data;
+    } catch (error) {
+      console.error("Error al actualizar el precio del producto:", error);
+      throw error;
+    }
+  },
+
+  obtenerHistorialPrecios: async (id: number) => {
+    try {
+      const token = localStorage.getItem("Token");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+      const result = await axios.get(`${apiUrl}/producto/${id}/historial-precio`, { headers });
+      return result.data;
+    } catch (error) {
+      console.error("Error al obtener el historial de precios del producto:", error);
+      throw error;
+    }
+  }
 };
 
 export default ProductoService;
