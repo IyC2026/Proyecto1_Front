@@ -11,6 +11,7 @@ interface Props {
   onEditar: (id: number) => void;
   onInfo: (id: number) => void;
   onDelete: (id: number) => void;
+  onMovimientos?: (id: number) => void;
   onCambioPrecios?: (id: number) => void;
   onHistorial?: (id: number) => void;
   onNotificar?: (producto: ConsultarProducto) => void;
