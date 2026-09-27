@@ -89,6 +89,8 @@ export default function RegistrarActualizarProductoForm({
   const cantidadPorPack = watch("cantidadPorPack");
   const utilizaStockMinimo = watch("utilizaStockMinimo");
   const utilizaPack = watch("utilizaPack");
+  const costo = watch("costo");
+  const porcentaje = watch("porcentaje");
 
   //=============================== CONSTANTES PARA MOVIMIENTO ENTRE CAMPOS ==================================
   const denominacionProductoRef = useRef<HTMLInputElement>(null);
@@ -120,6 +122,16 @@ export default function RegistrarActualizarProductoForm({
       setValue("cantidadPorPack", 0);
     }
   }, [utilizaStockMinimo, utilizaPack, setValue]);
+
+  useEffect(() => {
+    const costoNumerico = Number(costo ?? 0);
+    const porcentajeNumerico = Number(porcentaje ?? 0);
+    const precioCalculado = costoNumerico * (1 + porcentajeNumerico / 100);
+
+    setValue("precio", Number(precioCalculado.toFixed(2)), {
+      shouldValidate: true,
+    });
+  }, [costo, porcentaje, setValue]);
 
   useEffect(() => {
     setValue("stockMinimo", lineaSeleccionada.stockMinimo || 0);
@@ -156,6 +168,7 @@ export default function RegistrarActualizarProductoForm({
           setValue("codigoBarra", producto.codigoBarra || null);
           setValue("stock", producto.stock || 0);
           setValue("costo", producto.costo || 0);
+          setValue("porcentaje", producto.porcentaje || 0);
           setValue("alicuotaIva", producto.alicuotaIva || 0);
 
           setValue("stockMinimo", producto.stockMinimo || 0);
@@ -413,9 +426,9 @@ export default function RegistrarActualizarProductoForm({
                     name="precio"
                     label="Precio"
                     value={watch("precio") || 0}
-                    onChange={(value) => setValue("precio", value, { shouldValidate: true })}
+                    onChange={() => undefined}
                     maxDigits={9}
-                    disabled={producto && producto.sistema > 0 ? true : false}
+                    disabled
                   />
                   <PorcentajeInput
                     name="porcentaje"
