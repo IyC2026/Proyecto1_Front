@@ -54,6 +54,17 @@ export default function ConsultarProductos() {
   const { configuracion } = useConfiguracionSistema();
   const [codigo, setCodigo] = useState<string>("");
   const [exacto, setExacto] = useState<boolean>(true);
+  const [denominacion, setDenominacion] = useState<string>("");
+
+  const handleCambiarCodigo = (value: string) => {
+    setCodigo(value);
+    setDenominacion("");
+  };
+
+  const handleCambiarDenominacion = (value: string) => {
+    setDenominacion(value);
+    setCodigo("");
+  };
   const [auditoria, setAuditoria] = useState<Auditoria>({} as Auditoria);
   const isMounted = useRef(false);
   const inicializacionCompleta = useRef(false);
@@ -297,10 +308,16 @@ export default function ConsultarProductos() {
   };
 
   const handleMostrarCambioPrecios = async (id: number) => {
-    if (id) {
-      const producto = await ProductoService.obtenerId(id);
-      setProductoInfo(producto);
-      setMostrarCambioPrecios(true);
+    try {
+      if (id) {
+        console.log("Obteniendo producto con ID:", id);
+        const producto = await ProductoService.obtenerId(id);
+        console.log("Producto obtenido:", producto);
+        setProductoInfo(producto);
+        setMostrarCambioPrecios(true);
+      }
+    } catch (error) {
+      console.error("Error al obtener el producto para cambio de precios:", error);
     }
   };
 
@@ -357,15 +374,15 @@ export default function ConsultarProductos() {
     setLoading(true);
 
     const filtrosConPaginacion = {
-      denominacion: valoresFiltros.denominacion,
+      denominacion: denominacion,
       codigoProveedor: valoresFiltros.codigoProveedor,
       codigoReferencia: valoresFiltros.codigoReferencia,
+      codProveedorExacto: valoresFiltros.codProveedorExacto,
+      codReferenciaExacto: valoresFiltros.codReferenciaExacto,
       lineaId: valoresFiltros.lineaId,
       marcaId: valoresFiltros.marcaId,
       proveedorId: valoresFiltros.proveedorId,
       conStock: valoresFiltros.conStock,
-      codReferenciaExacto: valoresFiltros.codReferenciaExacto,
-      codProveedorExacto: valoresFiltros.codProveedorExacto,
       skip: skip,
       take: take,
     };
@@ -393,7 +410,7 @@ export default function ConsultarProductos() {
     await handleBuscarProductos();
   };
 
-  const handleBuscarProductos = async (botonBuscar?: boolean) => {
+  const handleBuscarProductos = async (botonBuscar?: boolean, lineaId?: number, superLineaId?: number) => {
     setBusquedaRapida(false);
     if (botonBuscar) {
       resetearPaginacion();
@@ -401,12 +418,13 @@ export default function ConsultarProductos() {
     setLoading(true);
 
     const filtrosConPaginacion = {
-      denominacion: valoresFiltros.denominacion,
+      denominacion: denominacion,
       codigoProveedor: valoresFiltros.codigoProveedor,
       codigoReferencia: valoresFiltros.codigoReferencia,
       codProveedorExacto: valoresFiltros.codProveedorExacto,
       codReferenciaExacto: valoresFiltros.codReferenciaExacto,
-      lineaId: valoresFiltros.lineaId,
+      lineaId: lineaId,
+      superLineaId: superLineaId,
       marcaId: valoresFiltros.marcaId,
       proveedorId: valoresFiltros.proveedorId,
       conStock: valoresFiltros.conStock,
@@ -516,7 +534,7 @@ export default function ConsultarProductos() {
                 roles={getRoles()}
                 codigo={codigo}
                 exacto={exacto}
-                onChangeCodigo={setCodigo}
+                onChangeCodigo={handleCambiarCodigo}
                 onChangeExacto={setExacto}
                 onBuscarRapido={() => handleBuscarProductosRapido(true)}
                 onNuevo={openModal}
@@ -525,6 +543,9 @@ export default function ConsultarProductos() {
                 paginaActual={paginaActual}
                 onImprimirTodo={handleImprimirTodo}
                 onImprimirPagina={handleImprimirPagina}
+                denominacion={denominacion}
+                onChangeDenominacion={handleCambiarDenominacion}
+                onBuscar={(lineaId, superLineaId) => handleBuscarProductos(true, lineaId, superLineaId)}
               />
               </div>
 

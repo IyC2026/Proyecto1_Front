@@ -2,7 +2,7 @@ import { Info, Pencil, Trash } from "lucide-react";
 import { Button } from "../../ui/Button";
 import { JSX, ReactNode } from "react";
 
-type ActionVariant = "info" | "edit" | "delete";
+type ActionVariant = "info" | "edit" | "delete" | "success" | "secondary";
 
 interface ActionButtonProps {
   variant: ActionVariant;
@@ -14,7 +14,7 @@ interface ActionButtonProps {
 
 const variantConfig: Record<
   ActionVariant,
-  { className: string; icon: JSX.Element }
+  { className: string; icon?: JSX.Element }
 > = {
   info: {
     className: "bg-blue-500 hover:bg-blue-600 text-white",
@@ -27,6 +27,12 @@ const variantConfig: Record<
   delete: {
     className: "bg-red-500 hover:bg-red-600 text-white",
     icon: <Trash size={16} />,
+  },
+  success: {
+    className: "bg-emerald-500 hover:bg-emerald-600 text-white",
+  },
+  secondary: {
+    className: "bg-gray-500 hover:bg-gray-600 text-white",
   },
 };
 

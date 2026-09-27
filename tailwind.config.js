@@ -30,6 +30,20 @@ export default {
         gradientSoft: "#fdfcf9",    // Beige muy sutil (fondo degrade)
         gradientLight: "#fff9f4",   // Beige claro cálido (inicio de gradient)
         gradientWarm: "#fdf2e9",    // Beige cálido más saturado (fin de gradient)
+
+        // Tokens compatibles con shadcn / Button
+        primary: "#b5854c",
+        "primary-foreground": "#ffffff",
+        secondary: "#f3e1c6",
+        "secondary-foreground": "#5c3d2e",
+        foreground: "#5c3d2e",
+        muted: "#f8f1e9",
+        "muted-foreground": "#6b5a49",
+        border: "#e7d7bf",
+        input: "#e7d7bf",
+        ring: "#b5854c",
+        destructive: "#dc2626",
+        "destructive-foreground": "#ffffff",
       },
     },
   },

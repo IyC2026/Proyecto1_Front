@@ -17,6 +17,8 @@ interface Props {
   onEditar: (id: number) => void;
   onInfo: (id: number) => void;
   onDelete: (id: number) => void;
+  onCambioPrecios?: (id: number) => void;
+  onHistorial?: (id: number) => void;
 
   compact?: boolean;
 }
@@ -26,7 +28,8 @@ export function ProductoActions({
   onEditar,
   onInfo,
   onDelete,
- 
+  onCambioPrecios,
+  onHistorial,
   compact = false,
 }: Props) {
   return (
@@ -38,6 +41,26 @@ export function ProductoActions({
       >
         <Info size={16} />
       </ActionButton>
+
+      {onCambioPrecios && (
+        <ActionButton
+          variant="success"
+          title="Cambiar precio"
+          onClick={() => onCambioPrecios(producto.id)}
+        >
+          <Tag size={16} />
+        </ActionButton>
+      )}
+
+      {onHistorial && (
+        <ActionButton
+          variant="secondary"
+          title="Ver historial de precios"
+          onClick={() => onHistorial(producto.id)}
+        >
+          <History size={16} />
+        </ActionButton>
+      )}
 
       <ActionButton
         variant="edit"

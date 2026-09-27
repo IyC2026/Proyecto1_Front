@@ -1,17 +1,17 @@
-import type { Linea } from "../../../../interfaces/gestion-producto/linea/interfaces-linea";
+import type { Presentacion } from "../../../../interfaces/gestion-producto/presentacion/interfaces-presentacion";
 import { Info, Pencil, Trash } from "lucide-react";
 import { ActionButton } from "../../../herramientas/reutilizables/action-button";
 import { formatFechaHora } from "../../../herramientas/formateo-de-campos/fucion-formateo";
 
 interface Props {
-  linea: Linea;
+  presentacion: Presentacion;
   onEditar: (id: number) => void;
   onInfo: (id: number) => void;
   onDelete: (id: number) => void;
 }
 
-export function DatosCards({ linea, onEditar, onInfo, onDelete }: Props) {
-  const eliminada = !!linea.deletedAt;
+export function DatosCards({ presentacion, onEditar, onInfo, onDelete }: Props) {
+  const eliminada = !!presentacion.deletedAt;
 
   return (
     <div
@@ -23,40 +23,35 @@ export function DatosCards({ linea, onEditar, onInfo, onDelete }: Props) {
     >
       <div className="mb-2">
         <p className="text-xs text-gray-500">Denominación</p>
-        <p className="text-sm font-medium text-gray-800 line-clamp-2">{linea.denominacion}</p>
+        <p className="text-sm font-medium text-gray-800 line-clamp-2">
+          {presentacion.denominacion}
+        </p>
         {eliminada && (
           <p className="text-xs text-red-500 font-medium mt-0.5">
-            Eliminada el {formatFechaHora(linea.deletedAt)}
+            Eliminada el {formatFechaHora(presentacion.deletedAt)}
           </p>
         )}
       </div>
 
-      {(linea.superLineaNombre || linea.superlinea?.denominacion) && (
-        <div className="mb-2">
-          <p className="text-xs text-gray-500">SuperLínea</p>
-          <p className="text-sm text-gray-700">{linea.superLineaNombre || linea.superlinea?.denominacion}</p>
-        </div>
-      )}
-
-      {linea.observacion && (
+      {presentacion.observacion && (
         <div className="mb-3">
           <p className="text-xs text-gray-500">Observación</p>
-          <p className="text-sm text-gray-700 line-clamp-2">{linea.observacion}</p>
+          <p className="text-sm text-gray-700 line-clamp-2">{presentacion.observacion}</p>
         </div>
       )}
 
       {!eliminada && (
         <div className="flex justify-end gap-1 pt-2 border-t border-gray-100">
-          <ActionButton variant="info" onClick={() => onInfo(linea.id)} title="Ver información">
+          <ActionButton variant="info" onClick={() => onInfo(presentacion.id)} title="Ver información">
             <Info size={16} />
           </ActionButton>
-          <ActionButton variant="edit" onClick={() => onEditar(linea.id)} title="Editar">
+          <ActionButton variant="edit" onClick={() => onEditar(presentacion.id)} title="Editar">
             <Pencil size={16} />
           </ActionButton>
           <ActionButton
             variant="delete"
-            onClick={() => onDelete(linea.id)}
-            disabled={linea.sistema}
+            onClick={() => onDelete(presentacion.id)}
+            disabled={!!presentacion.sistema}
             title="Eliminar"
           >
             <Trash size={16} />

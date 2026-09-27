@@ -4,19 +4,19 @@ import {
   denominacionNotScrollColumnProps,
   observacionesColumnProps,
 } from "../../../herramientas/tablas/formateo-columnas-documentos";
-import type { Linea } from "../../../../interfaces/gestion-producto/linea/interfaces-linea";
+import type { Presentacion } from "../../../../interfaces/gestion-producto/presentacion/interfaces-presentacion";
 import { ActionButton } from "../../../herramientas/reutilizables/action-button";
 import { formatFechaHora } from "../../../herramientas/formateo-de-campos/fucion-formateo";
 
 interface Props {
-  lineas: Linea[];
+  presentaciones: Presentacion[];
   onEditar: (id: number) => void;
   onInfo: (id: number) => void;
   onDelete: (id: number) => void;
 }
 
-export function DatosTabla({ lineas, onEditar, onInfo, onDelete }: Props) {
-  const columns: Column<Linea>[] = [
+export function DatosTabla({ presentaciones, onEditar, onInfo, onDelete }: Props) {
+  const columns: Column<Presentacion>[] = [
     {
       header: "Denominación",
       accessor: "denominacion",
@@ -33,15 +33,6 @@ export function DatosTabla({ lineas, onEditar, onInfo, onDelete }: Props) {
       ),
     },
     {
-      header: "SuperLínea",
-      accessor: "superLineaNombre",
-      formatFunction: ({ row }) => (
-        <span className="text-gray-700 font-medium">
-          {row.superLineaNombre || row.superlinea?.denominacion || "-"}
-        </span>
-      ),
-    },
-    {
       header: "Observación",
       accessor: "observacion",
       ...observacionesColumnProps,
@@ -51,11 +42,11 @@ export function DatosTabla({ lineas, onEditar, onInfo, onDelete }: Props) {
   return (
     <TablaAGGrid
       columns={columns}
-      data={lineas}
+      data={presentaciones}
       getRowClass={(params: any) =>
         params.data?.deletedAt ? "opacity-50 bg-gray-100 dark:bg-slate-800 pointer-events-none" : ""
       }
-      actions={(row: Linea) => {
+      actions={(row: Presentacion) => {
         if (row.deletedAt) return <div className="w-full" />;
 
         return (
@@ -69,7 +60,7 @@ export function DatosTabla({ lineas, onEditar, onInfo, onDelete }: Props) {
             <ActionButton
               variant="delete"
               title="Eliminar"
-              disabled={row.sistema}
+              disabled={!!row.sistema}
               onClick={() => onDelete(row.id)}
             >
               <Trash size={16} />

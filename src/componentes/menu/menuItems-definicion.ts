@@ -1,4 +1,5 @@
 import {
+  Package,
   Layers,
   ShoppingBag,
   Tag,
@@ -22,6 +23,7 @@ import {
   Smartphone,
   Bell,
   MessageSquare,
+  BadgePercent,
 } from "lucide-react";
 import { Rol } from "../../interfaces/generales/interfaces-generales";
 
@@ -63,13 +65,16 @@ export const menuItems: MenuItem[] = [
         label: "Configuración",
         path: "",
         subMenu: [
-          { icon: Tag, label: "Marca", path: "marca" },
-          { icon: Layers, label: "Líneas", path: "linea" },
+          { icon: BadgePercent, label: "Cambio masivo de precios", path: "cambio-precios-masivo", roles: [Rol.ADMINISTRADOR, Rol.EMPLEADO, Rol.ROOT] },
+          { icon: Layers, label: "SuperLíneas", path: "super-linea", roles: [Rol.ADMINISTRADOR, Rol.EMPLEADO, Rol.ROOT] },
+          { icon: Layers, label: "Líneas", path: "linea", roles: [Rol.ADMINISTRADOR, Rol.EMPLEADO, Rol.ROOT] },
+          { icon: Tag, label: "Marca", path: "marca", roles: [Rol.ADMINISTRADOR, Rol.EMPLEADO, Rol.ROOT] },
+          { icon: Package, label: "Presentación", path: "presentacion", roles: [Rol.ADMINISTRADOR, Rol.EMPLEADO, Rol.ROOT] },
         ],
-        roles: [Rol.ADMINISTRADOR,Rol.ROOT,Rol.ROOT],
+        roles: [Rol.ADMINISTRADOR, Rol.EMPLEADO, Rol.ROOT],
       },
     ],
-    roles: [Rol.ADMINISTRADOR, Rol.VENDEDOR, Rol.REPARTIDOR, Rol.REPOSITOR,Rol.ROOT],
+    roles: [Rol.ADMINISTRADOR, Rol.EMPLEADO, Rol.VENDEDOR, Rol.REPARTIDOR, Rol.REPOSITOR, Rol.ROOT],
   },
 
   
