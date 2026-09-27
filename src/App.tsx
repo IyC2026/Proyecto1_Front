@@ -51,7 +51,9 @@ function App() {
               <Route path="cliente" element={<ConsultarCliente />} />
               <Route path="proveedor" element={<ConsultarProveedores />} />
               <Route path="personal" element={<ConsultarPersonal />} />
-              <Route path="cambio-precios-masivo" element={<CambioPreciosMasivo />} />
+              <Route element={<PrivateRoute allowedRoles={[Rol.ADMINISTRADOR, Rol.EMPLEADO, Rol.ROOT]} />}>
+                <Route path="cambio-precios-masivo" element={<CambioPreciosMasivo />} />
+              </Route>
               <Route path="lista-precios" element={<ListaPrecios />} />
               <Route path="localidad" element={<ConsultarLocalidad />} />
               <Route path="condicion-iva" element={<CondicionIva />} />     

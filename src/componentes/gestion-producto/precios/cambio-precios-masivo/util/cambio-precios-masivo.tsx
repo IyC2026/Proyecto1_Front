@@ -1,391 +1,220 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { Card, CardContent } from "../../../../ui/Card";
-import { Alertas, TipoAlerta, TituloAlerta, useAlerts } from "../../../../herramientas/alertas/alertas";
-import {
-  TipoAlertaConfirmacion,
-  TituloAlertaConfirmacion,
-  useConfirmation,
-} from "../../../../herramientas/alertas/alertas-confirmacion";
-import { ConsultarProductosCambioPreciosMasivo } from "../../../../../interfaces/gestion-producto/producto/interfaces-producto";
+import { useEffect, useState } from "react";
+import { BadgePercent, Calculator, CircleAlert, Save } from "lucide-react";
+import LineaService from "../../../linea/services/linea-service";
 import { formatPrice } from "../../../../herramientas/formateo-de-campos/fucion-formateo";
-import { Column } from "../../../../herramientas/tablas/tabla-flexible-ag-grid";
-import { useConfiguracionSistema } from "../../../../sistema/ConfiguracionSistemaContext";
-import { useFiltrosContext } from "../../../../../context/filtros-contesxt";
-import CambioPreciosMasivoService from "../cambio-precios-masivo-service";
-import CambioPreciosManual from "../cambio-precios.manual";
-import { useCatalogosContext } from "../../../../../context/catalogos-context";
-import { getUsuarioId } from "../../../../../utils/auth";
-import { useCambioPrecios } from "../hooks/useCambioPrecios";
-import TablaCambioPrecios from "../componentes/tabla-cambio-precios";
-import FiltrosCambioPrecios from "../componentes/filtros-cambio-precios";
+import { parseApiError } from "../../../../../utils/errores";
+import { Button } from "../../../../ui/Button";
+import { useCambioPrecios, type AjusteMasivo } from "../hooks/useCambioPrecios";
+
+type LineaOption = { id: number; denominacion: string };
 
 export default function CambioPreciosMasivo() {
-  const [error, setError] = useState<string | null>(null);
-  const [mostrarActualizarProducto, setMostrarActualizarProducto] = useState(false);
-  const [productoSeleccionado, setProductoSeleccionado] = useState<ConsultarProductosCambioPreciosMasivo>(
-    {} as ConsultarProductosCambioPreciosMasivo
-  );
-
-  const usuarioId = getUsuarioId();
-  const { configuracion } = useConfiguracionSistema();
-  const { alerts, addAlert, removeAlert } = useAlerts();
-  const { showConfirmation, AlertasConfirmacion } = useConfirmation();
-
-  const {
-    setFiltrosNecesarios,
-    valoresFiltros,
-    setValoresFiltros,
-    limpiarFiltros,
-    setBuscar,
-    buscarMarcas,
-    buscarLineas,
-  } = useFiltrosContext();
-
+  const [alcance, setAlcance] = useState<"global" | "linea">("global");
+  const [lineaId, setLineaId] = useState("");
+  const [lineas, setLineas] = useState<LineaOption[]>([]);
+  const [tipoAjuste, setTipoAjuste] = useState<"porcentaje" | "montoFijo">("porcentaje");
+  const [valorAjuste, setValorAjuste] = useState("0");
+  const [errorLineas, setErrorLineas] = useState<string | null>(null);
   const {
     productos,
     loading,
-    setProductos,
-    buscarProductos,
-    aplicarCambios,
+    error,
+    ajustePrevisualizado,
+    guardado,
+    previsualizarCambios,
     guardarCambios,
-    actualizarProductoLocal,
-  } = useCambioPrecios(usuarioId);
-
-  const { marcas, lineas, sublineas, setLineas, setMarcas, setSublineas } = useCatalogosContext();
+    limpiarPreview,
+  } = useCambioPrecios();
 
   useEffect(() => {
-    limpiarFiltros();
-    setBuscar({ cont: 0, componente: "cambio-precios-masivo" });
-    setFiltrosNecesarios({ marca: true, linea: true, sublinea: true });
-  }, []);
+    let activo = true;
 
-  const fetchMarcas = useCallback(async () => {
-    setError(null);
-    try {
-      const caracteresParaBusqueda = configuracion?.caracteresParaBusqueda ?? 4;
-      if (
-        valoresFiltros.denominacionMarca &&
-        valoresFiltros.denominacionMarca.length >= caracteresParaBusqueda
-      ) {
-        const marcasTotales = await CambioPreciosMasivoService.obtenerTotales(
-          { denominacion: valoresFiltros.denominacionMarca || " " },
-          "marcas"
-        );
-        setMarcas(marcasTotales.data);
-      }
-    } catch {
-      setError("No se pudieron cargar las marcas.");
-    }
-  }, [valoresFiltros.denominacionMarca, configuracion?.caracteresParaBusqueda]);
+    LineaService.obtener({ denominacion: "", skip: 0, take: 1000 })
+      .then((respuesta) => {
+        if (activo) setLineas(respuesta?.data ?? []);
+      })
+      .catch((requestError) => {
+        if (activo) setErrorLineas(parseApiError(requestError));
+      });
 
-  useEffect(() => {
-    fetchMarcas();
-  }, [buscarMarcas]);
-
-  const fetchLineas = useCallback(async () => {
-    setError(null);
-    try {
-      const caracteresParaBusqueda = configuracion?.caracteresParaBusqueda ?? 4;
-      if (
-        valoresFiltros.denominacionLinea &&
-        valoresFiltros.denominacionLinea.length >= caracteresParaBusqueda
-      ) {
-        const lineasTotales = await CambioPreciosMasivoService.obtenerTotales(
-          { denominacion: valoresFiltros.denominacionLinea || " " },
-          "lineas"
-        );
-        setLineas(lineasTotales.data);
-      }
-    } catch {
-      setError("No se pudieron cargar las líneas.");
-    }
-  }, [valoresFiltros.denominacionLinea, configuracion?.caracteresParaBusqueda]);
-
-  useEffect(() => {
-    fetchLineas();
-  }, [buscarLineas]);
-
-  useEffect(() => {
-    const fetchSublineas = async () => {
-      setError(null);
-      try {
-        if (valoresFiltros.lineaId && valoresFiltros.lineaId !== 0) {
-          const sublineasTotales = await CambioPreciosMasivoService.obtenerTotalesPara(
-            valoresFiltros.lineaId || 0,
-            "sublineas"
-          );
-          setSublineas(sublineasTotales.data);
-        }
-      } catch {
-        setError("No se pudieron cargar las sublíneas.");
-      }
+    return () => {
+      activo = false;
     };
-    fetchSublineas();
-  }, [valoresFiltros.lineaId]);
-
-  const handleAbrirActualizarProducto = useCallback(
-    (producto: ConsultarProductosCambioPreciosMasivo) => {
-      setProductoSeleccionado(producto);
-      setMostrarActualizarProducto(true);
-    },
-    []
-  );
-
-  const handleCerrarActualizarProducto = useCallback(() => {
-    setMostrarActualizarProducto(false);
-    setProductoSeleccionado({} as ConsultarProductosCambioPreciosMasivo);
   }, []);
 
-  const handleDelete = useCallback(
-    async (id: number) => {
-      const confirmed = await showConfirmation({
-        type: TipoAlertaConfirmacion.DESTRUCTIVE,
-        title: TituloAlertaConfirmacion.DESTRUCTIVE,
-        message: "¿Estás seguro de que quieres eliminar este elemento? Esta acción no se puede deshacer.",
-        confirmText: "Eliminar",
-        cancelText: "Cancelar",
-        onConfirm: () => {},
-      });
-      if (!confirmed) return;
+  const invalidarPreview = () => {
+    if (ajustePrevisualizado) limpiarPreview();
+  };
 
-      try {
-        setProductos((prev) => prev.filter((p) => p.id !== id));
-        addAlert({
-          type: TipoAlerta.SUCCESS,
-          title: TituloAlerta.SUCCESS,
-          message: "El elemento ha sido eliminado.",
-          autoClose: true,
-          duration: 3000,
-        });
-      } catch {
-        addAlert({
-          type: TipoAlerta.ERROR,
-          title: TituloAlerta.ERROR,
-          message: "No se puede eliminar este elemento.",
-          autoClose: true,
-          duration: 3000,
-        });
-      }
-    },
-    [showConfirmation, setProductos, addAlert]
-  );
+  const construirAjuste = (): AjusteMasivo | null => {
+    const valor = Number(valorAjuste);
+    if (!Number.isFinite(valor)) return null;
+    if (alcance === "linea" && !lineaId) return null;
 
-  const handleLimpiarFiltros = useCallback(() => {
-    setValoresFiltros({
-      denominacionMarca: "",
-      denominacionLinea: "",
-      marcaId: undefined,
-      lineaId: undefined,
-      sublineaId: undefined,
-    });
-    setSublineas([]);
-    setLineas([]);
-    setMarcas([]);
-    setProductos([]);
-  }, [setValoresFiltros, setSublineas, setLineas, setMarcas, setProductos]);
+    return {
+      alcance,
+      ...(alcance === "linea" ? { lineaId: Number(lineaId) } : {}),
+      tipoAjuste,
+      ...(tipoAjuste === "porcentaje" ? { porcentaje: valor } : { valor }),
+    };
+  };
 
-  const handleActualizarSuccess = useCallback(
-    (productoActualizado: ConsultarProductosCambioPreciosMasivo) => {
-      addAlert({
-        type: TipoAlerta.SUCCESS,
-        title: TituloAlerta.SUCCESS,
-        message: `El producto ${productoActualizado.denominacion} se ha actualizado correctamente.`,
-        autoClose: true,
-        duration: 3000,
-      });
-      actualizarProductoLocal(productoActualizado);
-      setMostrarActualizarProducto(false);
-    },
-    [addAlert, actualizarProductoLocal]
-  );
+  const handlePreview = async () => {
+    const ajuste = construirAjuste();
+    if (!ajuste) return;
+    await previsualizarCambios(ajuste);
+  };
 
-  const handleGuardarCambios = useCallback(async () => {
-    const response = await guardarCambios();
-    addAlert({
-      type: TipoAlerta.SUCCESS,
-      title: TituloAlerta.SUCCESS,
-      message: response.mensaje,
-      autoClose: true,
-      duration: 3000,
-    });
-  }, [guardarCambios, addAlert]);
+  const handleSave = async () => {
+    if (!window.confirm(`¿Guardar el nuevo precio de ${productos.length} productos?`)) return;
+    try {
+      await guardarCambios();
+    } catch {
+      // The hook exposes the API error in the page.
+    }
+  };
 
-  const columns = useMemo<Column<ConsultarProductosCambioPreciosMasivo>[]>(
-    () => [
-      {
-        header: "Código",
-        accessor: "codigoProveedor",
-        flex: 0.4,
-        type: "text",
-        align: "right",
-        editable: false,
-        scrollable: false,
-      },
-      {
-        header: "Denominación",
-        accessor: "denominacion",
-        flex: 1.3,
-        type: "text",
-        editable: false,
-        scrollable: false,
-        formatFunction: ({ value, row }) => (
-          <div className="flex flex-col">
-            <div
-              className="flex items-center gap-1 truncate whitespace-nowrap max-w-[700px]"
-              title={
-                typeof value === "string"
-                  ? `${value}${row.observacion ? `\n${row.observacion}` : ""}`
-                  : undefined
-              }
-            >
-              <span>{value}</span>
-            </div>
-            {row.observacion && (
-              <div className="text-sm text-gray-500 truncate max-w-[700px]">{row.observacion}</div>
-            )}
-          </div>
-        ),
-      },
-      {
-        header: "P Ocasional",
-        accessor: "precioOcasionalConIva",
-        flex: 0.5,
-        type: "text",
-        editable: false,
-        align: "right",
-        formatFunction: ({ value }) => <span>{formatPrice(value, "ARS")}</span>,
-      },
-      {
-        header: "N Ocasional",
-        accessor: "precioOcasionalConIvaNuevo",
-        flex: 0.5,
-        type: "text",
-        editable: false,
-        align: "right",
-        formatFunction: ({ value }) => <span>{formatPrice(value, "ARS")}</span>,
-      },
-      {
-        header: "P Mayorista",
-        accessor: "precioMayoristaConIva",
-        flex: 0.5,
-        type: "text",
-        editable: false,
-        align: "right",
-        formatFunction: ({ value }) => <span>{formatPrice(value, "ARS")}</span>,
-      },
-      {
-        header: "N Mayorista",
-        accessor: "precioMayoristaConIvaNuevo",
-        flex: 0.5,
-        type: "text",
-        editable: false,
-        align: "right",
-        formatFunction: ({ value }) => <span>{formatPrice(value, "ARS")}</span>,
-      },
-      {
-        header: "P Cliente",
-        accessor: "precioClienteConIva",
-        flex: 0.5,
-        type: "text",
-        editable: false,
-        align: "right",
-        formatFunction: ({ value }) => <span>{formatPrice(value, "ARS")}</span>,
-      },
-      {
-        header: "N Cliente",
-        accessor: "precioClienteConIvaNuevo",
-        flex: 0.5,
-        type: "text",
-        editable: false,
-        align: "right",
-        formatFunction: ({ value }) => <span>{formatPrice(value, "ARS")}</span>,
-      },
-      {
-        header: "P Oferta",
-        accessor: "precioOfertaConIva",
-        flex: 0.5,
-        type: "text",
-        editable: false,
-        align: "right",
-        formatFunction: ({ value }) => <span>{formatPrice(value, "ARS")}</span>,
-      },
-      {
-        header: "N Oferta",
-        accessor: "precioOfertaConIvaNuevo",
-        flex: 0.5,
-        type: "text",
-        editable: false,
-        align: "right",
-        formatFunction: ({ value }) => <span>{formatPrice(value, "ARS")}</span>,
-      },
-    ],
-    []
-  );
+  const puedePrevisualizar = !loading && Number.isFinite(Number(valorAjuste)) &&
+    (alcance === "global" || Boolean(lineaId));
+  const puedeGuardar = !loading && !guardado && productos.length > 0 &&
+    Boolean(ajustePrevisualizado);
 
   return (
-    <div className="w-full">
-      <div className="p-6">
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400 text-lg">Cargando productos...</p>
-          </div>
-        ) : error ? (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 max-w-md">
-              <p className="text-red-600 dark:text-red-400 text-center font-medium">{error}</p>
-            </div>
-          </div>
-        ) : (
-          <>
-            <Card className="border-gray-200 dark:border-slate-700">
-              <FiltrosCambioPrecios
-                valoresFiltros={valoresFiltros}
-                setValoresFiltros={setValoresFiltros}
-                marcas={marcas}
-                lineas={lineas}
-                sublineas={sublineas}
-                productosLength={productos.length}
-                onBuscar={() =>
-                  buscarProductos({
-                    marcaId: valoresFiltros.marcaId,
-                    lineaId: valoresFiltros.lineaId,
-                    subLineaId: valoresFiltros.sublineaId,
-                  })
-                }
-                onAplicarCambios={aplicarCambios}
-                onGuardarCambios={handleGuardarCambios}
-                fetchMarcas={fetchMarcas}
-                fetchLineas={fetchLineas}
-                onLimpiarFiltros={handleLimpiarFiltros}
-              />
-              <CardContent className="p-0">
-                <TablaCambioPrecios
-                  productos={productos}
-                  columns={columns}
-                  onEditar={handleAbrirActualizarProducto}
-                  onEliminar={handleDelete}
-                />
-              </CardContent>
-            </Card>
+    <section className="w-full space-y-5 p-4 md:p-6">
+      <header className="flex items-center gap-3 border-b border-gray-200 pb-4 dark:border-slate-700">
+        <BadgePercent className="h-7 w-7 text-blue-600" aria-hidden="true" />
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Cambio masivo de precios</h1>
+          <p className="text-sm text-gray-600 dark:text-gray-300">Calcula y revisa los precios antes de guardarlos.</p>
+        </div>
+      </header>
 
-            <Alertas alerts={alerts} onRemove={removeAlert} />
-            <AlertasConfirmacion />
-          </>
+      <div className="grid grid-cols-1 gap-4 rounded-lg border border-gray-200 bg-white p-4 md:grid-cols-2 xl:grid-cols-4 dark:border-slate-700 dark:bg-slate-900">
+        <label className="flex flex-col gap-1 text-sm font-medium text-gray-700 dark:text-gray-200">
+          Alcance
+          <select
+            value={alcance}
+            onChange={(event) => {
+              invalidarPreview();
+              setAlcance(event.target.value as "global" | "linea");
+            }}
+            className="h-10 rounded-md border border-gray-300 bg-white px-3 text-gray-900 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+          >
+            <option value="global">Todo el sistema</option>
+            <option value="linea">Una línea</option>
+          </select>
+        </label>
+
+        {alcance === "linea" && (
+          <label className="flex flex-col gap-1 text-sm font-medium text-gray-700 dark:text-gray-200">
+            Línea
+            <select
+              value={lineaId}
+              onChange={(event) => {
+                invalidarPreview();
+                setLineaId(event.target.value);
+              }}
+              className="h-10 rounded-md border border-gray-300 bg-white px-3 text-gray-900 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+            >
+              <option value="">Selecciona una línea</option>
+              {lineas.map((linea) => (
+                <option key={linea.id} value={linea.id}>{linea.denominacion}</option>
+              ))}
+            </select>
+            {errorLineas && <span className="text-xs font-normal text-red-600">{errorLineas}</span>}
+          </label>
         )}
+
+        <label className="flex flex-col gap-1 text-sm font-medium text-gray-700 dark:text-gray-200">
+          Tipo de ajuste
+          <select
+            value={tipoAjuste}
+            onChange={(event) => {
+              invalidarPreview();
+              setTipoAjuste(event.target.value as "porcentaje" | "montoFijo");
+            }}
+            className="h-10 rounded-md border border-gray-300 bg-white px-3 text-gray-900 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+          >
+            <option value="porcentaje">Porcentaje</option>
+            <option value="montoFijo">Monto fijo</option>
+          </select>
+        </label>
+
+        <label className="flex flex-col gap-1 text-sm font-medium text-gray-700 dark:text-gray-200">
+          {tipoAjuste === "porcentaje" ? "Porcentaje" : "Monto a sumar o restar"}
+          <input
+            type="number"
+            min={tipoAjuste === "porcentaje" ? "-100" : undefined}
+            step="0.01"
+            value={valorAjuste}
+            onChange={(event) => {
+              invalidarPreview();
+              setValorAjuste(event.target.value);
+            }}
+            className="h-10 rounded-md border border-gray-300 bg-white px-3 text-right text-gray-900 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+          />
+        </label>
+
+        <div className="flex items-end gap-2 md:col-span-2 xl:col-span-4">
+          <Button onClick={handlePreview} disabled={!puedePrevisualizar}>
+            <Calculator className="mr-2 h-4 w-4" />
+            Previsualizar lote
+          </Button>
+          <Button onClick={handleSave} disabled={!puedeGuardar}>
+            <Save className="mr-2 h-4 w-4" />
+            {guardado ? "Cambios guardados" : "Guardar cambios"}
+          </Button>
+        </div>
       </div>
 
-      {mostrarActualizarProducto && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="relative p-6 sm:p-8 rounded-lg shadow-lg w-4/5 sm:w-3/5 md:w-2/3 lg:w-1/2 xl:w-2/5 max-w-full">
-            <CambioPreciosManual
-              producto={productoSeleccionado}
-              onClose={handleCerrarActualizarProducto}
-              onSuccess={handleActualizarSuccess}
-            />
-          </div>
+      {error && (
+        <div role="alert" className="flex items-start gap-2 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
+          <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>{error}</span>
         </div>
       )}
-    </div>
+
+      <section className="overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-slate-700">
+          <h2 className="font-medium text-gray-900 dark:text-white">Productos alcanzados</h2>
+          <span className="text-sm text-gray-600 dark:text-gray-300">{productos.length} productos</span>
+        </div>
+        {loading ? (
+          <div className="p-8 text-center text-sm text-gray-600 dark:text-gray-300">Procesando lote...</div>
+        ) : productos.length === 0 ? (
+          <div className="p-8 text-center text-sm text-gray-600 dark:text-gray-300">
+            Configura el alcance y el ajuste, luego previsualiza el lote.
+          </div>
+        ) : (
+          <div className="max-h-[60vh] overflow-auto">
+            <table className="w-full min-w-[620px] border-collapse text-sm">
+              <thead className="sticky top-0 bg-gray-100 text-gray-700 dark:bg-slate-800 dark:text-gray-200">
+                <tr>
+                  <th className="px-4 py-3 text-left font-medium">Producto</th>
+                  <th className="px-4 py-3 text-right font-medium">Precio actual</th>
+                  <th className="px-4 py-3 text-right font-medium">Precio nuevo</th>
+                  <th className="px-4 py-3 text-right font-medium">Variación</th>
+                </tr>
+              </thead>
+              <tbody>
+                {productos.map((producto) => (
+                  <tr key={producto.id} className="border-t border-gray-100 text-gray-800 dark:border-slate-800 dark:text-gray-100">
+                    <td className="px-4 py-3">
+                      <div className="font-medium">{producto.denominacion}</div>
+                      <div className="text-xs text-gray-500">ID {producto.id}</div>
+                    </td>
+                    <td className="px-4 py-3 text-right tabular-nums">{formatPrice(producto.precioAnterior, "ARS")}</td>
+                    <td className="px-4 py-3 text-right font-semibold tabular-nums">{formatPrice(producto.precioNuevo, "ARS")}</td>
+                    <td className="px-4 py-3 text-right tabular-nums">
+                      {formatPrice(producto.precioNuevo - producto.precioAnterior, "ARS")}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+    </section>
   );
 }

@@ -1,80 +1,86 @@
 import { useState } from "react";
+import { parseApiError } from "../../../../../utils/errores";
 import CambioPreciosMasivoService from "../cambio-precios-masivo-service";
-import { ConsultarProductosCambioPreciosMasivo } from "../../../../../interfaces/gestion-producto/producto/interfaces-producto";
-import { ResponsePost } from "../../../../../interfaces/generales/interfaces-generales";
 
-export function useCambioPrecios(usuarioId: number | null) {
-  const [productos, setProductos] =
-    useState<ConsultarProductosCambioPreciosMasivo[]>([]);
+export type AjusteMasivo = {
+  alcance: "global" | "linea";
+  lineaId?: number;
+  tipoAjuste: "porcentaje" | "montoFijo";
+  porcentaje?: number;
+  valor?: number;
+};
+
+export interface CambioPrecioPreview {
+  id: number;
+  denominacion: string;
+  precioAnterior: number;
+  precioNuevo: number;
+}
+
+export function useCambioPrecios() {
+  const [productos, setProductos] = useState<CambioPrecioPreview[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [ajustePrevisualizado, setAjustePrevisualizado] = useState<AjusteMasivo | null>(null);
+  const [guardado, setGuardado] = useState(false);
 
-  const buscarProductos = async (filtros: any) => {
+  const previsualizarCambios = async (ajuste: AjusteMasivo) => {
     setLoading(true);
+    setError(null);
+    setGuardado(false);
 
-    const productosFiltrados =
-      await CambioPreciosMasivoService.obtenerDesde(
-        filtros,
-        "productos"
-      );
-
-    setProductos(productosFiltrados.data);
-    setLoading(false);
+    try {
+      const resultado = await CambioPreciosMasivoService.aplicarCambios(ajuste);
+      if (!Array.isArray(resultado)) {
+        throw new Error("El servidor devolvió una respuesta de previsualización inválida.");
+      }
+      setProductos(resultado);
+      setAjustePrevisualizado(ajuste);
+      return resultado as CambioPrecioPreview[];
+    } catch (requestError) {
+      setProductos([]);
+      setAjustePrevisualizado(null);
+      setError(parseApiError(requestError));
+      return [];
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const aplicarCambios = async (porcentaje: number) => {
+  const guardarCambios = async () => {
+    if (!ajustePrevisualizado || productos.length === 0) {
+      throw new Error("Primero debes previsualizar un lote válido.");
+    }
+
     setLoading(true);
-
-    const payload = {
-      items: productos,
-      porcentaje,
-    };
-
-    const productosActualizados =
-      await CambioPreciosMasivoService.aplicarCambios(payload);
-
-    setProductos(productosActualizados);
-    setLoading(false);
+    setError(null);
+    try {
+      const respuesta = await CambioPreciosMasivoService.guardarCambios(ajustePrevisualizado);
+      setGuardado(true);
+      return respuesta as { actualizado: boolean; actualizados: number; mensaje: string };
+    } catch (requestError) {
+      setError(parseApiError(requestError));
+      throw requestError;
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const guardarCambios = async (): Promise<ResponsePost> => {
-    setLoading(true);
-
-    const payload = {
-      items: productos,
-      usuarioCreatedId: usuarioId,
-    };
-
-    const response =
-      await CambioPreciosMasivoService.guardarCambios(payload);
-
-    setProductos((prev) =>
-      prev.map((p) => ({ ...p, dirty: false }))
-    );
-
-    setLoading(false);
-
-    return response;
+  const limpiarPreview = () => {
+    setProductos([]);
+    setAjustePrevisualizado(null);
+    setGuardado(false);
+    setError(null);
   };
-
-  const actualizarProductoLocal = (
-   productoActualizado: ConsultarProductosCambioPreciosMasivo
-   ) => {
-   setProductos((prevProductos) =>
-      prevProductos.map((p) =>
-         p.id === productoActualizado.id
-         ? { ...productoActualizado, dirty: true }
-         : p
-      )
-   );
-   };
 
   return {
     productos,
     loading,
-    setProductos,
-    buscarProductos,
-    aplicarCambios,
+    error,
+    ajustePrevisualizado,
+    guardado,
+    previsualizarCambios,
     guardarCambios,
-    actualizarProductoLocal
+    limpiarPreview,
   };
 }
